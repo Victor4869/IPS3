@@ -1,0 +1,59 @@
+// Pin definitions
+const int fanPin = 9;          // PWM pin for fan control
+const int tempSensorPin = 2;   // Digital pin for temperature sensor (DHT22)
+const int pumpPin = 3;         // Digital pin for pump control
+const int ledCircuit1Pin = 4;  // Digital pin for LED circuit 1
+const int ledCircuit2Pin = 5;  // Digital pin for LED circuit 2
+const int ledCircuit3Pin = 6;  // Digital pin for LED circuit 3
+
+void setup() {
+    // Initialize pins
+    pinMode(fanPin, OUTPUT);
+    pinMode(tempSensorPin, INPUT);
+    pinMode(pumpPin, OUTPUT);
+    pinMode(ledCircuit1Pin, OUTPUT);
+    pinMode(ledCircuit2Pin, OUTPUT);
+    pinMode(ledCircuit3Pin, OUTPUT);
+
+    // Start serial communication
+    Serial.begin(9600);
+}
+
+void loop() {
+    // Check for incoming serial data
+    if (Serial.available() > 0) {
+        String command = Serial.readStringUntil('\n');
+        processCommand(command);
+    }
+}
+
+void processCommand(String command) {
+    // Process the command received from Python
+    if (command.startsWith("FAN_SPEED:")) {
+        int speed = command.substring(10).toInt();
+        analogWrite(fanPin, map(speed, 0, 100, 0, 255));
+    } else if (command.startsWith("START_FAN:")) {
+        int speed = command.substring(10).toInt();
+        analogWrite(fanPin, map(speed, 0, 100, 0, 255));
+    } else if (command == "STOP_FAN") {
+        analogWrite(fanPin, 0);
+    } else if (command.startsWith("START_PUMP:")) {
+        digitalWrite(pumpPin, HIGH);
+    } else if (command == "STOP_PUMP") {
+        digitalWrite(pumpPin, LOW);
+    } else if (command.startsWith("START_LED:")) {
+        String circuits = command.substring(10, command.indexOf(':'));
+        int time = command.substring(command.indexOf(':') + 1).toInt();
+        if (circuits.indexOf("Circuit 1") >= 0) digitalWrite(ledCircuit1Pin, HIGH);
+        if (circuits.indexOf("Circuit 2") >= 0) digitalWrite(ledCircuit2Pin, HIGH);
+        if (circuits.indexOf("Circuit 3") >= 0) digitalWrite(ledCircuit3Pin, HIGH);
+        delay(time * 60000);
+        digitalWrite(ledCircuit1Pin, LOW);
+        digitalWrite(ledCircuit2Pin, LOW);
+        digitalWrite(ledCircuit3Pin, LOW);
+    } else if (command == "STOP_LED") {
+        digitalWrite(ledCircuit1Pin, LOW);
+        digitalWrite(ledCircuit2Pin, LOW);
+        digitalWrite(ledCircuit3Pin, LOW);
+    }
+}
